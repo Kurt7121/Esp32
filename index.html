@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LED Controller</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 48px 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .label { font-size: 13px; color: #6b7280; }
+    .bulb {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid #d1d5db;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .bulb.on { background: #eaf3de; border-color: #3b6d11; }
+    .bulb svg {
+      width: 32px; height: 32px;
+      stroke: #9ca3af; fill: none; stroke-width: 1.5;
+      transition: stroke 0.3s;
+    }
+    .bulb.on svg { stroke: #3b6d11; }
+    .state-lbl { font-size: 24px; font-weight: 500; color: #111827; }
+    .state-lbl.on { color: #3b6d11; }
+    button {
+      padding: 10px 48px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #f3f4f6;
+      color: #111827;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    button.on { background: #eaf3de; border-color: #3b6d11; color: #27500a; }
+    .conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .cdot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; transition: background 0.3s; }
+    .cdot.live { background: #27ae60; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="label">Built-in LED</p>
+
+    <div class="bulb" id="bulb">
+      <svg id="bulb-icon" viewBox="0 0 24 24">
+        <path d="M9 18h6M10 22h4M12 2a7 7 0 014.9 11.9c-.6.6-1 1.4-1 2.1H8.1c0-.8-.4-1.5-1-2.1A7 7 0 0112 2z"/>
+      </svg>
+    </div>
+
+    <p class="state-lbl" id="state-lbl">OFF</p>
+
+    <button id="main-btn" onclick="toggle()">Turn ON</button>
+
+    <div class="conn">
+      <div class="cdot" id="cdot"></div>
+      <span id="conn-lbl">Connecting…</span>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyAw6fWS5MPe_23sA4eVMA41TYo7jMUqJEY",
+      databaseURL: "https://led-activity-b8c58-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    });
+
+    const ref = firebase.database().ref("led");
+
+    firebase.database().ref('.info/connected').on('value', s => {
+      const ok = s.val();
+      document.getElementById('cdot').className = 'cdot' + (ok ? ' live' : '');
+      document.getElementById('conn-lbl').textContent = ok ? 'Connected' : 'Disconnected';
+    });
+
+    ref.on('value', s => {
+      const on = s.val() && s.val().state === true;
+      document.getElementById('bulb').className        = 'bulb' + (on ? ' on' : '');
+      document.getElementById('state-lbl').textContent = on ? 'ON' : 'OFF';
+      document.getElementById('state-lbl').className   = 'state-lbl' + (on ? ' on' : '');
+      document.getElementById('main-btn').textContent  = on ? 'Turn OFF' : 'Turn ON';
+      document.getElementById('main-btn').className    = on ? 'on' : '';
+    });
+
+    function toggle() {
+      ref.once('value').then(s => {
+        const on = s.val() && s.val().state === true;
+        ref.set({ state: !on });
+      });
+    }
+  </script>
+</body>
+</html>
